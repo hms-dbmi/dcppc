@@ -16,10 +16,12 @@
    ]
   },
   {
-   "cell_type": "raw",
+   "cell_type": "code",
+   "execution_count": null,
    "metadata": {
-    "collapsed": false
+    "collapsed": true
    },
+   "outputs": [],
    "source": [
     "install.packages(\"devtools\", repos = \"https://cran.rstudio.com/\")\n",
     "devtools::install_github(\"hms-dbmi/sandboxR\", force = TRUE)\n",
@@ -36,10 +38,12 @@
    ]
   },
   {
-   "cell_type": "raw",
+   "cell_type": "code",
+   "execution_count": null,
    "metadata": {
-    "collapsed": false
+    "collapsed": true
    },
+   "outputs": [],
    "source": [
     "dl.nhanes()"
    ]
@@ -55,8 +59,12 @@
    ]
   },
   {
-   "cell_type": "raw",
-   "metadata": {},
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
    "source": [
     "study_name <- \"NHANES\"\n",
     "files <- \"NHANES_tables_per_questionnaire\"\n",
@@ -76,8 +84,12 @@
    ]
   },
   {
-   "cell_type": "raw",
-   "metadata": {},
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
    "source": [
     "path <- \"Pathway/to/the/folder/where/the/map/and/the/tree/are/located\"\n",
     "TreeToMap(path)"
@@ -92,8 +104,12 @@
    ]
   },
   {
-   "cell_type": "raw",
-   "metadata": {},
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
    "source": [
     "MapToTree(path)"
    ]
@@ -108,8 +124,12 @@
    ]
   },
   {
-   "cell_type": "raw",
-   "metadata": {},
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
    "source": [
     "list.oldmaps(path)\n",
     "look.oldmap(path, \"olmap YYYY-MM-DD HHMM10 AM\")\n",
