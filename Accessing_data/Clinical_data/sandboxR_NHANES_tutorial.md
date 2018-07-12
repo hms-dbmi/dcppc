@@ -3,10 +3,11 @@
 
 ## Introduction
 ### Load the package
+```R
 install.packages("devtools", repos = "https://cran.rstudio.com/")
 devtools::install_github("hms-dbmi/sandboxR", force = TRUE)
 assignInNamespace("cedta.override", c(data.table:::cedta.override,"sandboxR"), "data.table")
-library(sandboxR)
+library(sandboxR)```
 ### Download the latest NHANES dataset
 For the purpose of this tutorial, we are using NHANES, a dataset publicly available (https://www.cdc.gov/nchs/nhanes/index.htm). The first function we created dowloads the various nhanes tables, and join the questionnaires across different years. By default, it will place the csv files in a directory called "NHANES_tables_per_questionnaire" folder on your working directory. You can add a "destination" argument if you want to change the destination of this folder
 dl.nhanes()
