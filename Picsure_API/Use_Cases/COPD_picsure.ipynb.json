@@ -1,0 +1,252 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Case-study: use of PIC-SURE API to extract data from the COPD cohort\n",
+    "\n",
+    "## INTRO - Install the required libraries\n",
+    "\n",
+    "We install the newly created package picsuRe to facilitate the use of the PIC-SURE API\n",
+    "\n",
+    "We also set up the JupyterNB environment"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "httr::set_config(httr::config(ssl_verifypeer = 0L, ssl_verifyhost = 0L, ssl_verifystatus  = 0L))\n",
+    "if (!file.exists(Sys.getenv(\"TAR\")))  Sys.setenv(TAR = \"/bin/tar\")\n",
+    "\n",
+    "install.packages(\"devtools\", repos = \"http://cran.r-project.org\")\n",
+    "install.packages(\"reticulate\", repos = \"http://cran.r-project.org\")\n",
+    "install.packages(\"ggthemes\", repos = \"https://cran.cnr.berkeley.edu/\")\n",
+    "install.packages(\"rlang\", repos = \"http://cran.r-project.org\")\n",
+    "install.packages(\"Rcpp\", repos = \"http://cran.r-project.org\")\n",
+    "install.packages(\"ggplot2\", repos = \"http://cran.r-project.org\")\n",
+    "\n",
+    "library(devtools)\n",
+    "library(reticulate)\n",
+    "library(ggplot2)\n",
+    "library(ggthemes)\n",
+    "\n",
+    "install_github(\"hms-dbmi/picsuRe\")\n",
+    "install_github(\"kaz-yos/tableone\")\n",
+    "library(picsuRe)\n",
+    "library(tableone)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Data extraction\n",
+    "`environment`: The URL of the environment\n",
+    "\n",
+    "`key`: To authenticate with PIC-SURE put your key or token in an otherwise empty text file in your JupyterNotebook's top level folder. The key will be read from there so the key does not get seen by anyone except you.\n",
+    "\n",
+    "`variables`: A vector with the variables of interest. You can put a variable, or a path, as you want. You can also use the * key if you want to use a wild card. If an argument corresponds to a node, it will return all the variables below the node"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "env <- \"https://copdgene.hms.harvard.edu\"\n",
+    "key <- as.character(read.table(\"key.csv\", sep=\",\")[1,1])\n",
+    "\n",
+    "var1 <- \"00 Affection status\"\n",
+    "var2 <- \"00 Consent groups\"\n",
+    "var3 <- \"01 Demographics/01 Demographics/Gender\"\n",
+    "var4 <- \"01 Demographics/Age at enrollment\"\n",
+    "var5 <- \"01 Demographics/01 Demographics/Race\"\n",
+    "var6 <- \"03 Clinical data/Respiratory disease form/05 Environmental exposures/01 Cigarette smoking/02 Do you now smoke cigarettes as of one month ago\"\n",
+    "var7 <- \"Oxygen saturation and therapy/05 Resting SaO2 in percent\"\n",
+    "\n",
+    "\n",
+    "var <- c(var1, var2, var3, var4, var5, var6, var7)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "With the function `picsure`, we build our query, and get the results back from the API. The output is a dataset with the variables of interests. By default, it will return all the patients that have at least one value for a variable."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "demo <- picsure(env, key, var, verbose = TRUE)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "names(demo)[2]<-\"Affection_status\"\n",
+    "names(demo)[3]<-\"Consent_groups\"\n",
+    "names(demo)[7]<-\"Do_you_now_smoke_cigarettes\"\n",
+    "names(demo)[8]<-\"Resting_SaO2_in_percent\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Use the data to make statistics\n",
+    "### 2.a. Summary statistics\n",
+    "Let's take a look at the characteristics of our population"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "catVars <- c(\"Consent_groups\", \"Gender\", \"Affection_status\", \"Race\", \"Do_you_now_smoke_cigarettes\")\n",
+    "vars <- c(\"Consent_groups\", \"Affection_status\", \"Race\", \"Do_you_now_smoke_cigarettes\", \"Age_at_enrollment\", \"Resting_SaO2_in_percent\")\n",
+    "\n",
+    "paste(\"We have\", nrow(demo), \"patients in our population.\")\n",
+    "\"Table 1: Description of the population from the COPD Study\"\n",
+    "CreateTableOne(vars, data = demo[,-1], factorVars = catVars, strata = c(\"Gender\"), test = FALSE)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.b. Comparison of a categorical variable with a continuous one. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "Age <- demo$Age_at_enrollment\n",
+    "summary(Age)\n",
+    "hist(Age,\n",
+    "     main=\"Distribution of the age at enrollment among the cohort\",\n",
+    "     sub=\"-The dark line fits a normal distribution-\",\n",
+    "     xlab=\"Age at enrollment (years)\", \n",
+    "     ylab=\"n\",\n",
+    "     border=\"black\", \n",
+    "     col=\"wheat1\",\n",
+    "     xlim=c(20,100),\n",
+    "     ylim=c(0,0.05),\n",
+    "     breaks=10,\n",
+    "     las = 2,\n",
+    "     prob = TRUE\n",
+    "    )\n",
+    "m <- mean(Age, na.rm = TRUE)\n",
+    "std <- sqrt(var(Age, na.rm = TRUE))\n",
+    "x <- length(Age)\n",
+    "curve(dnorm(x, mean=m, sd=std), col=\"wheat4\", lwd=3, add=TRUE, yaxt=\"n\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.c. Comparison of 2 categorical variables. Cases and smokers."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "demo <- demo[((demo$Affection_status == \"Case\" | demo$Affection_status == \"Control\")\n",
+    "            & (demo$Do_you_now_smoke_cigarettes == \"Yes\" | demo$Do_you_now_smoke_cigarettes == \"No\")),]\n",
+    "demo <- droplevels(demo)\n",
+    "\n",
+    "Smokers <- demo$Do_you_now_smoke_cigarettes\n",
+    "Cases <- demo$Affection_status\n",
+    "\n",
+    "table(Cases, Smokers)\n",
+    "chisq.test(Cases, Smokers)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 3.b. Statistical analysis\n",
+    "We can now run a t-test in order to compare the resting SaO2 between case and control"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "demo2 <- demo[(demo$Affection_status == \"Case\" | demo$Affection_status == \"Control\"),]\n",
+    "\n",
+    "Resting_SaO2_in_percent <- demo$Resting_SaO2_in_percent\n",
+    "Affection_status <- demo2$Affection_status\n",
+    "\n",
+    "summary(Resting_SaO2_in_percent)\n",
+    "t.test(Resting_SaO2_in_percent~Affection_status)\n",
+    "boxplot(Resting_SaO2_in_percent~Affection_status, main=\"Resting SaO2 in percent by Affection status\", xlab=\"Affection status\", ylab=\"Resting SaO2 in percent\",   las = 1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "R",
+   "language": "R",
+   "name": "ir"
+  },
+  "language_info": {
+   "codemirror_mode": "r",
+   "file_extension": ".r",
+   "mimetype": "text/x-r-source",
+   "name": "R",
+   "pygments_lexer": "r",
+   "version": "3.3.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
